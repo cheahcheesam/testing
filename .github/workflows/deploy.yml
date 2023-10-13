@@ -47,4 +47,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: pages
           commit_message: ${{ github.event.head_commit.message }}
-          cname: docs.cheahcheesam.com  # required to use custom domain, otherwise will always revert to username.github.io/repo-name
+          cname: testing.cheahcheesam.com  # required to use custom domain, otherwise will always revert to username.github.io/repo-name
