@@ -13,6 +13,6 @@ Feel free to explore around, learn things, and use it to build your own projects
 
 As always, my life goal has been clear to myself and it is to fight against extreme poverty, with my own hands, knowledge, hard-earned assets, and ultimately - with **technology** itself!
 
-Live towards your goal. Live without regrets. Live life to the fullest!
+Live towards your goal. Live without regrets. Live life to the fullest!!
 
 {{< /blocks/cover >}}
