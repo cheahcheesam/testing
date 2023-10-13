@@ -1,0 +1,241 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Sam Docs – Try Hack Me Writeups</title><link>/docs/capture-the-flag/try-hack-me/</link><description>Recent content in Try Hack Me Writeups on Sam Docs</description><generator>Hugo -- gohugo.io</generator><lastBuildDate>Fri, 10 Mar 2023 00:00:00 +0000</lastBuildDate><atom:link href="/docs/capture-the-flag/try-hack-me/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: Reverse Engineering Writeup</title><link>/docs/capture-the-flag/try-hack-me/reverse-engineering/</link><pubDate>Fri, 10 Mar 2023 00:00:00 +0000</pubDate><guid>/docs/capture-the-flag/try-hack-me/reverse-engineering/</guid><description>
+&lt;h3 id="update-march-2023---task-files-and-flags-are-now-provided-below-since-the-reverse-engineering-room-has-become-private-on-tryhackme">Update (March 2023) - &lt;strong>Task files&lt;/strong> and &lt;strong>flags&lt;/strong> are now provided below, since the &lt;strong>Reverse Engineering room&lt;/strong> has become private on TryHackMe.&lt;/h3>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th style="text-align:center">Task File&lt;/th>
+&lt;th style="text-align:center">Flag&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td style="text-align:center">&lt;a href="files/crackme1.bin">crackme1&lt;/a>&lt;/td>
+&lt;td style="text-align:center">&lt;code>hax0r&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">&lt;a href="files/crackme2.bin">crackme2&lt;/a>&lt;/td>
+&lt;td style="text-align:center">&lt;code>4988&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td style="text-align:center">&lt;a href="files/crackme3.bin">crackme3&lt;/a>&lt;/td>
+&lt;td style="text-align:center">&lt;code>azt&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;hr>
+&lt;p>&lt;img src="images/1_begin_photo.png" alt="image">&lt;/p>
+&lt;p>&lt;strong>Hello and welcome!&lt;/strong>&lt;/p>
+&lt;p>Before we begin, a quick heads up that we will be reversing mainly on &lt;a href="https://github.com/radareorg/radare2#installation">&lt;strong>Radare2&lt;/strong>&lt;/a>, so get yours ready if you haven’t already had one! Otherwise, feel free to use any disassemblers of your choice!&lt;/p>
+&lt;p>Here’s the link to the &lt;a href="https://tryhackme.com/room/reverseengineering">&lt;strong>Reverse Engineering room&lt;/strong>&lt;/a> on Try Hack Me, which is what we’ll be focusing on later on. Also, consider starting with the much more beginner friendly &lt;a href="https://tryhackme.com/room/reverselfiles">&lt;strong>Reversing ELF room&lt;/strong>&lt;/a> if you’re new to reversing!&lt;/p>
+&lt;p>&lt;strong>With that said, let’s begin!&lt;/strong>&lt;/p>
+&lt;hr>
+&lt;h2 id="crackme1">&lt;strong>Crackme1&lt;/strong>&lt;/h2>
+&lt;blockquote>
+&lt;p>&lt;em>This first crackme file will give you an introduction to if statements and basic function calling in assembly.&lt;/em>&lt;/p>
+&lt;/blockquote>
+&lt;p>&lt;img src="images/2_crackme1_execute_test.png" alt="image">&lt;/p>
+&lt;p>With &lt;code>test&lt;/code> provided to the password prompt, the binary returns a string of &lt;code>password is incorrect&lt;/code>.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/3_disassembling_crackme1.png" alt="image">&lt;/p>
+&lt;p>Disassembling &lt;code>crackme1.bin&lt;/code> with Radare2.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/4_crackme1_aaa.png" alt="image">&lt;/p>
+&lt;p>Running &lt;code>aaa&lt;/code> command to analyze all functions within the binary.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/5_crackme1_afll.png" alt="image">&lt;/p>
+&lt;p>&lt;code>afll&lt;/code> to list out details of all functions. We’ll first start with disassembling of the &lt;code>main&lt;/code> function.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/6_crackme1_pdf_main.png" alt="image">&lt;/p>
+&lt;p>&lt;code>pdf @main&lt;/code> to disassemble the main function. By this point you should be able to spot the flag pretty easily already.&lt;/p>
+&lt;p>Now that we’ve obtained the flag, let’s try diving a little deeper and get a better understanding of those assembly instructions!&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/7_crackme1_pdf_main_detailed.png" alt="image">&lt;/p>
+&lt;p>From what we could observe, there seems to be &lt;strong>8 important segments of code&lt;/strong>. Their explanations are as following:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Print &lt;code>enter password&lt;/code> string.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Store the flag into &lt;code>var_14h&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Load the address of &lt;code>var_eh&lt;/code> into &lt;code>rax&lt;/code>, then copies it to &lt;code>rsi&lt;/code>, such that &lt;code>rsi&lt;/code> would have the address of &lt;code>var_eh&lt;/code>. Also load an address in the memory which contains &lt;code>%s&lt;/code> into &lt;code>rdi&lt;/code>.&lt;br>&lt;/p>
+&lt;p>These two arguments, &lt;code>rsi&lt;/code> and &lt;code>rdi&lt;/code> will be used as parameters for the calling of &lt;code>scanf()&lt;/code> in &lt;strong>4th segment&lt;/strong>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Calling of &lt;code>scanf()&lt;/code>.&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>rdi&lt;/code> which holds &lt;code>%s&lt;/code>, tells &lt;code>scanf()&lt;/code> it should expect a string input.&lt;/li>
+&lt;li>&lt;code>rsi&lt;/code> which holds memory address of &lt;code>var_eh&lt;/code>, tells &lt;code>scanf()&lt;/code> where to store the string input.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>Consist of the following operations.&lt;/p>
+&lt;ol>
+&lt;li>Load the address of &lt;code>var_14h&lt;/code> into &lt;code>rdx&lt;/code>, then copies it to &lt;code>rsi&lt;/code>.&lt;/li>
+&lt;li>Load the address of &lt;code>var_eh&lt;/code> into &lt;code>rax&lt;/code>, then copies it to &lt;code>rdi&lt;/code>.&lt;/li>
+&lt;li>In a sense, &lt;code>rsi&lt;/code> would contain address of &lt;strong>the flag&lt;/strong>, &lt;code>rdi&lt;/code> would contain address of &lt;strong>our string input&lt;/strong>. They will be used as parameters for calling of &lt;code>strcmp()&lt;/code>.&lt;/li>
+&lt;li>&lt;code>eax&lt;/code> will be used to store the return value of &lt;code>strcmp()&lt;/code>.
+&lt;ul>
+&lt;li>&lt;code>0&lt;/code> is returned by &lt;code>strcmp()&lt;/code> if both strings are &lt;strong>equal&lt;/strong>.&lt;/li>
+&lt;li>&lt;code>Non-zero value&lt;/code> is returned by &lt;code>strcmp()&lt;/code> if both strings are &lt;strong>not equal&lt;/strong>.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;li>
+&lt;p>Copy &lt;code>eax&lt;/code> to &lt;code>var_18h&lt;/code>, then compare it against &lt;code>0&lt;/code>.&lt;br>&lt;/p>
+&lt;p>Jump to &lt;strong>8th segment&lt;/strong> if they aren’t equal, otherwise proceed to &lt;strong>7th segment&lt;/strong>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Print &lt;code>password is correct&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Print &lt;code>password is incorrect&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>Feel free to take a moment to digest/understand all these steps!&lt;/strong>&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/8_crackme1_flag_verification.png" alt="image">&lt;/p>
+&lt;p>Flag verification.&lt;/p>
+&lt;hr>
+&lt;h2 id="crackme2">&lt;strong>Crackme2&lt;/strong>&lt;/h2>
+&lt;blockquote>
+&lt;p>&lt;em>This is the second crackme file — Unlike the first file, this will involve examining registers, how and where values are compared&lt;/em>&lt;/p>
+&lt;/blockquote>
+&lt;p>&lt;img src="images/9_crackme2_run.png" alt="image">&lt;/p>
+&lt;p>Nothing too special, this is done mostly to observe how the strings correlates with behavior of the binary.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/10_crackme2_r2d.png" alt="image">&lt;/p>
+&lt;p>Disassembling &lt;code>crackme2.bin&lt;/code> with Radare2.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/11_crackme2_aaa.png" alt="image">&lt;/p>
+&lt;p>&lt;code>aaa&lt;/code> to analyze all functions within the binary.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/12_crackme2_afll.png" alt="image">&lt;/p>
+&lt;p>&lt;code>afll&lt;/code> to list out details of all functions. Again, we’ll first start with disassembling of the &lt;code>main&lt;/code> function.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/13_crackme2_pdf_main.png" alt="image">&lt;/p>
+&lt;p>Unlike the previous crackme, there seems to be no obvious sign of flags in this one. But one thing for sure, we are trying to get the code in the &lt;strong>5th segment&lt;/strong> to execute. So, let’s begin with another round of analysis.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Print &lt;code>enter your password&lt;/code> string.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Load the address of &lt;code>var_ch&lt;/code> into &lt;code>rax&lt;/code>, then copies it to &lt;code>rsi&lt;/code>, such that &lt;code>rsi&lt;/code> would have the address of &lt;code>var_ch&lt;/code>.&lt;br>
+Also loads an address in the memory which holds &lt;code>%d&lt;/code> into &lt;code>rdi&lt;/code>.&lt;br>&lt;/p>
+&lt;p>These two arguments, &lt;code>rsi&lt;/code> and &lt;code>rdi&lt;/code> will be used as parameters for the calling of &lt;code>scanf()&lt;/code> in &lt;strong>3rd segment&lt;/strong>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Calling of &lt;code>scanf()&lt;/code>.&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>rdi&lt;/code> which holds &lt;code>%d&lt;/code> tells &lt;code>scanf()&lt;/code> it should expect a decimal integer input&lt;/li>
+&lt;li>&lt;code>rsi&lt;/code> which holds memory address of &lt;code>var_ch&lt;/code> tells &lt;code>scanf()&lt;/code> where to store the string input.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>Copy the value of &lt;code>var_ch&lt;/code> &lt;em>(our decimal integer input!)&lt;/em> to &lt;code>eax&lt;/code>, then compare it against &lt;strong>a hex value&lt;/strong>.&lt;br>
+Jump to &lt;strong>6th segment&lt;/strong> if they aren’t equal, otherwise proceed to &lt;strong>5th segment&lt;/strong>.&lt;br>&lt;/p>
+&lt;p>&lt;em>&lt;strong>As such, the hex value should be our flag!&lt;/strong>&lt;/em>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Print &lt;code>password is valid&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Print &lt;code>password is incorrect&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>Overall, the assembly code of crackme2 is more straight-forward in comparison to crackme1.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/14_crackme2_flag_verification.png" alt="image">&lt;/p>
+&lt;p>Flag verification.&lt;/p>
+&lt;hr>
+&lt;h2 id="crackme3">&lt;strong>Crackme3&lt;/strong>&lt;/h2>
+&lt;blockquote>
+&lt;p>&lt;em>This crackme will be significantly more challenging — it involves learning how loops work, and how they are represented in assembly&lt;/em>&lt;/p>
+&lt;/blockquote>
+&lt;p>Unlike the previous ones, the third challenge will require us to carry over what we’ve learned earlier, and observe how they are incorporated into loops.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/15_crackme3_run.png" alt="image">&lt;/p>
+&lt;p>Cool, got our good old &lt;code>password is incorrect&lt;/code>.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/16_crackme3_r2d.png" alt="image">&lt;/p>
+&lt;p>Disassembling &lt;code>crackme3.bin&lt;/code> with Radare2.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/17_crackme3_aaa.png" alt="image">&lt;/p>
+&lt;p>&lt;code>aaa&lt;/code> to analyze all functions within the binary.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/18_crackme3_afll.png" alt="image">&lt;/p>
+&lt;p>&lt;code>afll&lt;/code> to list out details of all functions. Let’s start disassembling the &lt;code>main&lt;/code> function.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/19_crackme3_pdf_main.png" alt="image">&lt;/p>
+&lt;p>Looks like we’ve got something interesting going on in the middle. Let’s switch over to graph view to get a better view.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/20_crackme3_sf_main_VV.png" alt="image">&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>sf main&lt;/code> to seek to address of main function.&lt;br>&lt;/li>
+&lt;li>&lt;code>VV&lt;/code> to switch to visual mode and view graphs.&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;p>&lt;img src="images/21_crackme3_VV_big.png" alt="image">&lt;/p>
+&lt;p>Some rough explanations:&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>Takes in our input, also initiates the loop counter to &lt;code>0&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Condition check for the loop, goes to &lt;strong>3rd segment&lt;/strong> &lt;em>(flag checking)&lt;/em> if the loop counter is less than or equal to &lt;code>2&lt;/code>, otherwise proceed to &lt;strong>5th segment&lt;/strong>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Flag checking operation, compares our input one character at a time against the flag.&lt;br>&lt;/p>
+&lt;p>Goes to &lt;strong>4th segment&lt;/strong> &lt;em>(counter increment)&lt;/em> if they match, otherwise proceed to &lt;strong>6th segment&lt;/strong>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Increment loop counter by &lt;code>1&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Print &lt;code>password is correct&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>Print &lt;code>password is incorrect&lt;/code>.&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>Thus, our goal is to figure out the input needed for crackme3 to execute in the following order!&lt;/strong>&lt;br>
+&lt;code>1234 → 234 → 234 → 25&lt;/code>&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/22_crackme3_VV_big_cmp.png" alt="images">&lt;/p>
+&lt;p>There are lots of methods to go about obtaining the flag, but the easiest way should be observing &lt;strong>how our input affects the highlighted instruction&lt;/strong> in the figure above, as it directly decides if the loop counter should be incremented &lt;em>(which we obviously want it to)&lt;/em>.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/23_crackme3_db.png" alt="image">&lt;/p>
+&lt;p>Press &lt;code>q&lt;/code> 2 times to return to CLI interface.&lt;br>
+&lt;code>db 0x561331e0077c&lt;/code> to set breakpoint at the specified instruction.&lt;/p>
+&lt;p>We’ll try to observe how our input values affect those two registers - &lt;code>dl&lt;/code>, &lt;code>al&lt;/code>&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/24_crackme3_a.png" alt="image">&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>dc&lt;/code> to start start/continue execution.&lt;/li>
+&lt;li>We’ll provide an input of &lt;code>ABCD&lt;/code> &lt;em>(0x41, 0x42, 0x43, 0x44)&lt;/em>, just because they are easier to spot in the memory.&lt;/li>
+&lt;li>&lt;code>dr&lt;/code> to show value stored in registers. As a side note, &lt;code>dl&lt;/code> is the lowest 8 bit of &lt;code>rdx&lt;/code>, &lt;code>al&lt;/code> is the lowest 8 bit of &lt;code>rax&lt;/code>.&lt;/li>
+&lt;/ol>
+&lt;p>Interesting&amp;hellip; It seems that &lt;code>rdx&lt;/code> holds the hex value from &lt;strong>the first character (A)&lt;/strong> of our input string. Furthermore, it is being compared against &lt;code>rax&lt;/code>, &lt;code>0x00000061&lt;/code>, which means&amp;hellip;&lt;/p>
+&lt;p>&lt;em>&lt;strong>The first character of our flag is an &lt;code>a&lt;/code>!&lt;/strong>&lt;/em>&lt;/p>
+&lt;p>Feel free to take a moment to understand how/why it is so.&lt;/p>
+&lt;p>Got it? We’ll modify the value of the &lt;code>rdx&lt;/code> register to match &lt;code>rax&lt;/code> before continuing execution, so that the loop doesn’t break.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/25_crackme3_z.png" alt="image">&lt;/p>
+&lt;p>Hit our second breakpoint, same concept as before, we’ll modify &lt;code>rdx&lt;/code> register to match &lt;code>rax&lt;/code>, the second character of the flag - &lt;code>z&lt;/code>.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/26_crackme3_t.png" alt="image">&lt;/p>
+&lt;p>Last character of the flag.&lt;/p>
+&lt;hr>
+&lt;p>&lt;img src="images/27_crackme3_flag_verification.png" alt="image">&lt;/p>
+&lt;p>&lt;em>&lt;strong>Voila!&lt;/strong>&lt;/em>&lt;/p>
+&lt;hr>
+&lt;h2 id="afterthoughts">&lt;strong>Afterthoughts&lt;/strong>&lt;/h2>
+&lt;p>Overall, the Reverse Engineering room was a decent learning experience for myself on the following concepts of assembly language:&lt;/p>
+&lt;ul>
+&lt;li>Conditional statements&lt;/li>
+&lt;li>Values comparison&lt;/li>
+&lt;li>Loops&lt;/li>
+&lt;/ul>
+&lt;p>I’ve had a good amount of eureka moments throughout these crackmes and they were truly amazing!&lt;/p></description></item></channel></rss>
