@@ -1,0 +1,50 @@
+# inspired by peaceiris/actions-hugo (https://github.com/marketplace/actions/hugo-setup#%EF%B8%8F-workflow-for-autoprefixer-and-postcss-cli)
+# actions/setup-node has been removed, since ubuntu image already comes with the latest lts version of node.js
+
+name: build site with hugo then deploy to github pages
+
+on:
+  push:
+    branches:
+      - main  # set a branch to deploy
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04  # should remain updated to latest ubuntu lts
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+
+    steps:
+      - uses: actions/checkout@v3.3.0
+        with:
+          fetch-depth: 1  # only fetch the latest commit to reduce runtime
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2.6.0
+        with:
+          hugo-version: "0.110.0"  # should be updated to latest minor release
+          extended: true
+
+      - name: Install PostCSS as per Docsy requirement  # https://www.docsy.dev/docs/get-started/other-options/#install-postcss
+        run: |
+          npm install --package-lock-only  # only generating package-lock.json from package.json
+          npm ci                           # install packages
+
+      - name: Install addtional Docsy dependencies
+        run: |
+          npm install --package-lock-only  # only generating package-lock.json from package.json
+          npm ci                           # install packages
+        working-directory: ./themes/docsy
+
+      - run: hugo --minify                 # build site at ./public
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3.9.2
+        if: ${{ github.ref == 'refs/heads/main' }}  # the branch we have set to deploy
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: pages
+          commit_message: ${{ github.event.head_commit.message }}
+          cname: docs.cheahcheesam.com  # required to use custom domain, otherwise will always revert to username.github.io/repo-name
